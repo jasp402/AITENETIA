@@ -1,13 +1,27 @@
-import { Cerebras } from '@cerebras/cerebras_cloud_sdk';
 import type { AIService, ChatMessage } from '../types';
+
+let cerebrasModulePromise: Promise<any> | null = null;
+
+async function getCerebrasClient() {
+  if (!cerebrasModulePromise) {
+    cerebrasModulePromise = import('@cerebras/cerebras_cloud_sdk');
+  }
+
+  const module = await cerebrasModulePromise;
+  const Cerebras = module?.Cerebras;
+
+  if (!Cerebras) {
+    throw new Error('Cerebras SDK did not expose the Cerebras client.');
+  }
+
+  return new Cerebras({
+    apiKey: process.env.CEREBRAS_API_KEY,
+  });
+}
 
 export const cerebrasFactory = {
   isEnabled: () => !!process.env.CEREBRAS_API_KEY,
   create: (): AIService => {
-    const client = new Cerebras({
-      apiKey: process.env.CEREBRAS_API_KEY,
-    });
-
     return {
       name: 'Cerebras',
       model: 'llama3.1-8b',
@@ -16,6 +30,7 @@ export const cerebrasFactory = {
 
       async validate() {
         try {
+          const client = await getCerebrasClient();
           await client.models.list();
           return true;
         } catch {
@@ -24,6 +39,7 @@ export const cerebrasFactory = {
       },
 
       async chat(messages: ChatMessage[]) {
+        const client = await getCerebrasClient();
         const response = await client.chat.completions.create({
           messages: messages.map(m => ({
             role: m.role as 'system' | 'user' | 'assistant',

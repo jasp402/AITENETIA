@@ -5,7 +5,7 @@
     "": {
       "name": "bun-ai-api",
       "dependencies": {
-        "@cerebras/cerebras_cloud_sdk": "^1.59.0",
+        "@cerebras/cerebras_cloud_sdk": "1.59.0",
         "@google/generative-ai": "^0.24.1",
         "@modelcontextprotocol/sdk": "^1.27.1",
         "@modelcontextprotocol/server-filesystem": "^2026.1.14",
