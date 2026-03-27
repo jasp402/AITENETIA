@@ -11,6 +11,7 @@ const envExamplePath = path.join(rootDir, ".env.example");
 const envPath = path.join(rootDir, ".env");
 const FRONTEND_PORT = 4000;
 const BACKEND_PORT = 4001;
+const SKIP_ROOT_INSTALL_ENV = "AITENETIA_SKIP_ROOT_INSTALL";
 
 const args = process.argv.slice(2);
 const command = args[0] || "help";
@@ -92,6 +93,33 @@ function getAppPackageManager() {
   const hasPnpmLock = existsSync(path.join(appDir, "pnpm-lock.yaml"));
   const hasBunLock = existsSync(path.join(appDir, "bun.lockb")) || existsSync(path.join(appDir, "bun.lock"));
   return hasPnpmLock ? "pnpm" : hasBunLock ? "bun" : "npm";
+}
+
+function getRootPackageManager() {
+  const hasPnpmLock = existsSync(path.join(rootDir, "pnpm-lock.yaml"));
+  const hasBunLock = existsSync(path.join(rootDir, "bun.lockb")) || existsSync(path.join(rootDir, "bun.lock"));
+  const hasNpmLock = existsSync(path.join(rootDir, "package-lock.json"));
+  if (hasPnpmLock) return "pnpm";
+  if (hasBunLock) return "bun";
+  if (hasNpmLock) return "npm";
+  return "npm";
+}
+
+function ensureRootDependencies() {
+  const packageManager = getRootPackageManager();
+
+  if (!hasCommand(packageManager)) {
+    fail(`The root project expects ${packageManager}. Install it and run the setup again.`);
+  }
+
+  log(`Installing root dependencies using ${packageManager}...`);
+  runCommand(packageManager, ["install"], {
+    cwd: rootDir,
+    env: {
+      ...process.env,
+      [SKIP_ROOT_INSTALL_ENV]: "1",
+    },
+  });
 }
 
 function ensureAppDependencies() {
@@ -247,6 +275,12 @@ async function launchStack({ open = false }) {
 }
 
 async function installFlow({ start = false, open = false }) {
+  if (process.env[SKIP_ROOT_INSTALL_ENV] !== "1") {
+    ensureRootDependencies();
+  } else {
+    log("Skipping root dependency install because setup is already running from postinstall.");
+  }
+
   ensureEnvFile();
   ensureAppDependencies();
   initializeDatabase({ required: true });
@@ -267,10 +301,21 @@ Usage:
   node scripts/cli.mjs launch [--open]
 
 Commands:
-  postinstall  Ensures app dependencies, .env and best-effort DB initialization.
-  install      Completes installation from an already-installed root project.
+  postinstall  Triggered by root install. Finalizes app dependencies, .env and best-effort DB initialization.
+  install      Full setup for a clean machine: installs root deps, app deps, .env and DB.
   init-db      Creates or updates SQLite schema and seeds agents.
   launch       Starts backend and frontend together.
+
+Recommended sequence:
+  1. Install Bun first.
+  2. Run: npx aitenetia install
+  3. Fill in .env with your API keys.
+  4. Run: npx aitenetia launch
+
+Notes:
+  - install is meant to cover dependency installation for the root project too.
+  - npm install or bun install will also trigger postinstall automatically.
+  - launch expects setup to be already completed.
 `);
 }
 
