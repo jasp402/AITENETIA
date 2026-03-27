@@ -2,9 +2,11 @@ import { db } from "./shared";
 
 export function initializeSchema() {
   console.log("Initializing Database...");
+  const workspaceRoot = process.cwd();
 
   db.query(`CREATE TABLE IF NOT EXISTS request_logs (request_id TEXT PRIMARY KEY,timestamp TEXT NOT NULL,providers_tried TEXT,final_provider TEXT,stream BOOLEAN,token_estimate INTEGER,total_latency_ms INTEGER,success BOOLEAN,error_details TEXT);`).run();
   db.query(`CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY,name TEXT,channel TEXT,busy_until TEXT,quiet_hours_start TEXT DEFAULT '22:00',quiet_hours_end TEXT DEFAULT '09:00',nudge_delay_hours INTEGER DEFAULT 12,created_at TEXT);`).run();
+  db.query(`CREATE TABLE IF NOT EXISTS mcp_servers (id TEXT PRIMARY KEY,name TEXT UNIQUE NOT NULL,type TEXT NOT NULL,command TEXT,args TEXT,env TEXT,url TEXT,is_active BOOLEAN DEFAULT 1,created_at TEXT);`).run();
   db.query(`CREATE TABLE IF NOT EXISTS port_blacklist (port INTEGER PRIMARY KEY,reason TEXT,is_active BOOLEAN DEFAULT 1,created_at TEXT,updated_at TEXT,last_checked_at TEXT);`).run();
   db.query(`CREATE TABLE IF NOT EXISTS project_specialist_reviews (id TEXT PRIMARY KEY,project_id TEXT NOT NULL,agent_id TEXT NOT NULL,status TEXT DEFAULT 'pending',participates BOOLEAN DEFAULT 0,reason TEXT,phase TEXT DEFAULT 'analysis',tasks_json TEXT,created_at TEXT,updated_at TEXT,FOREIGN KEY(project_id) REFERENCES projects(id),FOREIGN KEY(agent_id) REFERENCES agent_registry(id));`).run();
   db.query(`CREATE TABLE IF NOT EXISTS decision_requests (id TEXT PRIMARY KEY,project_id TEXT NOT NULL,task_id TEXT NOT NULL,agent_id TEXT NOT NULL,question TEXT NOT NULL,context TEXT,options_json TEXT,recommended_option TEXT,impact_if_delayed TEXT,status TEXT DEFAULT 'open',user_response TEXT,created_at TEXT,resolved_at TEXT,FOREIGN KEY(project_id) REFERENCES projects(id),FOREIGN KEY(task_id) REFERENCES tasks(id),FOREIGN KEY(agent_id) REFERENCES agent_registry(id));`).run();
@@ -41,6 +43,7 @@ export function initializeSchema() {
     "ALTER TABLE projects ADD COLUMN runtime_container_name TEXT",
     "ALTER TABLE projects ADD COLUMN environment_status TEXT DEFAULT 'not_prepared'",
     "ALTER TABLE projects ADD COLUMN environment_details TEXT",
+    "CREATE TABLE IF NOT EXISTS mcp_servers (id TEXT PRIMARY KEY, name TEXT UNIQUE NOT NULL, type TEXT NOT NULL, command TEXT, args TEXT, env TEXT, url TEXT, is_active BOOLEAN DEFAULT 1, created_at TEXT)",
     "CREATE TABLE IF NOT EXISTS project_specialist_reviews (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, agent_id TEXT NOT NULL, status TEXT DEFAULT 'pending', participates BOOLEAN DEFAULT 0, reason TEXT, phase TEXT DEFAULT 'analysis', tasks_json TEXT, created_at TEXT, updated_at TEXT, FOREIGN KEY(project_id) REFERENCES projects(id), FOREIGN KEY(agent_id) REFERENCES agent_registry(id))",
     "CREATE TABLE IF NOT EXISTS decision_requests (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, task_id TEXT NOT NULL, agent_id TEXT NOT NULL, question TEXT NOT NULL, context TEXT, options_json TEXT, recommended_option TEXT, impact_if_delayed TEXT, status TEXT DEFAULT 'open', user_response TEXT, created_at TEXT, resolved_at TEXT, FOREIGN KEY(project_id) REFERENCES projects(id), FOREIGN KEY(task_id) REFERENCES tasks(id), FOREIGN KEY(agent_id) REFERENCES agent_registry(id))",
     "CREATE TABLE IF NOT EXISTS project_thread_messages (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, request_id TEXT, role TEXT NOT NULL, content TEXT NOT NULL, meta_json TEXT, assigned_agent_id TEXT, task_id TEXT, created_at TEXT, FOREIGN KEY(project_id) REFERENCES projects(id), FOREIGN KEY(assigned_agent_id) REFERENCES agent_registry(id), FOREIGN KEY(task_id) REFERENCES tasks(id))",
@@ -65,4 +68,19 @@ export function initializeSchema() {
   for (const migration of migrations) {
     try { db.query(migration).run(); } catch {}
   }
+
+  db.query(
+    `INSERT OR IGNORE INTO mcp_servers (id, name, type, command, args, env, url, is_active, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    "filesystem-default",
+    "filesystem",
+    "stdio",
+    "npx",
+    JSON.stringify(["-y", "@modelcontextprotocol/server-filesystem", workspaceRoot]),
+    null,
+    null,
+    1,
+    new Date().toISOString()
+  );
 }

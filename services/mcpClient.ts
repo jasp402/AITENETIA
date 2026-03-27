@@ -18,8 +18,14 @@ export const mcpService = {
     // Carga e inicializa todos los servidores activos de la DB
     initServers: async () => {
         console.log("[MCP] Iniciando servidores configurados...");
-        const query = db.query("SELECT * FROM mcp_servers WHERE is_active = 1");
-        const servers = query.all() as McpServerConfig[];
+        let servers: McpServerConfig[] = [];
+        try {
+            const query = db.query("SELECT * FROM mcp_servers WHERE is_active = 1");
+            servers = query.all() as McpServerConfig[];
+        } catch (err) {
+            console.error("[MCP] No se pudo leer la tabla mcp_servers. Continuando sin servidores MCP.", err);
+            return;
+        }
 
         for (const srv of servers) {
             try {
