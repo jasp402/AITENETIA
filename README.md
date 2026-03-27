@@ -20,19 +20,87 @@ Para usuarios de Windows, se recomienda usar WSL o seguir las instrucciones espe
 
 ## Configuración e Instalación
 
-Sigue estos pasos detallados para poner en marcha el proyecto:
+Sigue este flujo para dejar el proyecto operativo en una máquina limpia.
 
-### 1. Instalar dependencias
+### 1. Instalar dependencias de la raíz
 
-Una vez clonado el proyecto, abre tu terminal en la carpeta raíz del proyecto y ejecuta:
+Desde la carpeta raíz ejecuta:
 
 ```bash
-bun install
+npm install
 ```
 
-Este comando descargará e instalará todas las librerías necesarias listadas en el archivo `package.json`.
+Ese paso ahora dispara un `postinstall` que:
 
-### 2. Configurar Variables de Entorno
+- instala dependencias del frontend en `app/`
+- crea `.env` a partir de `.env.example` si todavía no existe
+- inicializa la base de datos SQLite y sincroniza agentes si `bun` está disponible
+
+### 2. Completar setup asistido
+
+Para ejecutar el flujo completo de instalación y validación:
+
+```bash
+npm run setup
+```
+
+Si además quieres que levante backend + frontend y abra el navegador automáticamente al terminar:
+
+```bash
+npm run setup:start
+```
+
+También tienes un CLI local:
+
+```bash
+node scripts/cli.mjs install --start --open
+```
+
+Si prefieres invocarlo como binario del proyecto después de `npm install`, también puedes usar:
+
+```bash
+npx aitenetia install --start --open
+```
+
+#### Uso del CLI
+
+El CLI está pensado para cubrir tres momentos distintos:
+
+- `postinstall`: se ejecuta automáticamente al hacer `npm install`. Prepara `app/`, crea `.env` si falta e intenta inicializar la base de datos.
+- `install`: corre el setup completo de forma manual cuando quieres repetir la instalación o preparar una máquina nueva.
+- `launch`: arranca backend y frontend juntos.
+- `init-db`: reinicializa el esquema SQLite y el seed de agentes.
+
+Flujo recomendado:
+
+```bash
+# 1. Instalar dependencias y ejecutar postinstall
+npm install
+
+# 2. Completar setup manualmente si hace falta repetirlo
+npm run setup
+
+# 3. Levantar backend + frontend
+npm run dev
+```
+
+Comandos equivalentes:
+
+```bash
+npm run setup          # Igual a: node scripts/cli.mjs install
+npm run setup:start    # Igual a: node scripts/cli.mjs install --start --open
+npm run dev            # Igual a: node scripts/cli.mjs launch
+npm run dev:open       # Igual a: node scripts/cli.mjs launch --open
+npm run init-db        # Igual a: node scripts/cli.mjs init-db
+```
+
+Ayuda rápida del CLI:
+
+```bash
+node scripts/cli.mjs --help
+```
+
+### 3. Configurar Variables de Entorno
 
 El proyecto necesita ciertas claves de API para funcionar. Debes crear un archivo para almacenarlas de forma segura.
 
@@ -52,7 +120,7 @@ CEREBRAS_API_KEY=csk_...
 
 **Nota:** Asegúrate de obtener tus API Keys en los portales de desarrollador de Groq y Cerebras respectivamente.
 
-### 3. Ejecutar el Proyecto
+### 4. Ejecutar el Proyecto
 
 Tienes dos formas de ejecutar el servidor, dependiendo de si estás desarrollando o quieres ejecutarlo en producción.
 
@@ -61,7 +129,13 @@ Tienes dos formas de ejecutar el servidor, dependiendo de si estás desarrolland
 Este modo es ideal mientras estás editando código, ya que reinicia el servidor automáticamente cuando guardas cambios (`--watch` mode).
 
 ```bash
-bun run dev
+npm run dev
+```
+
+Si quieres que además abra el navegador:
+
+```bash
+npm run dev:open
 ```
 
 #### Modo Producción (`start`)
@@ -75,7 +149,7 @@ bun run start
 Verás un mensaje en la consola indicando que el servidor está corriendo, por ejemplo:
 `Server is running on http://localhost:4001`
 
-### 4. Frontend (Next.js)
+### 5. Frontend (Next.js)
 
 El proyecto cuenta con un frontend moderno construido en Next.js alojado en la carpeta `app/`.
 
@@ -84,7 +158,7 @@ El proyecto cuenta con un frontend moderno construido en Next.js alojado en la c
 Puedes arrancar tanto el **Backend** como el **Frontend** simultáneamente con un solo comando desde la raíz del proyecto:
 
 ```bash
-bun run dev
+npm run dev
 ```
 
 Esto iniciará:
@@ -96,6 +170,14 @@ Esto iniciará:
 Si prefieres ejecutarlos por separado:
 - **Backend**: `bun run backend` (en la raíz)
 - **Frontend**: `bun run frontend` (en la raíz) o `npm run dev` (dentro de `/app`)
+
+### 6. Base de datos
+
+Si necesitas reinicializar manualmente el esquema y el seed de agentes:
+
+```bash
+npm run init-db
+```
 
 ## Gestión de Servicios de IA
 

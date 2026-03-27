@@ -7,11 +7,19 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "bin": {
+    "aitenetia": "./scripts/cli.mjs"
+  },
   "scripts": {
     "start": "bun run index.ts",
-    "dev": "bun run scripts/dev.ts",
+    "dev": "node scripts/cli.mjs launch",
+    "dev:open": "node scripts/cli.mjs launch --open",
     "backend": "bun --watch run index.ts",
-    "frontend": "npm run dev --prefix app"
+    "frontend": "npm run dev --prefix app",
+    "init-db": "bun run scripts/init_db.ts",
+    "setup": "node scripts/cli.mjs install",
+    "setup:start": "node scripts/cli.mjs install --start --open",
+    "postinstall": "node scripts/cli.mjs postinstall"
   },
   "devDependencies": {
     "@types/bun": "latest"

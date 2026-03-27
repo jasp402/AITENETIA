@@ -107,24 +107,4 @@ export const textAnalyzerService = {
         return finalOutput.trim();
     },
 
-    /**
-     * Formatea el texto limpio para Telegram, convirtiendo bloques de código de terminal 
-     * en etiquetas legibles (ej: pre tags o code tags de HTML).
-     * En Telegram usaremos parse_mode: 'HTML'.
-     */
-    formatForTelegram: (text: string): string => {
-        let formatted = text;
-
-        // Por ahora, Telegram HTML API es muy sensible. Lo más seguro es escapar < y > básicos.
-        formatted = formatted.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-        // Convertir Markdown crudo (ej: `codigo`) a <code>codigo</code>
-        // Match básico de single backticks
-        formatted = formatted.replace(/`([^`\n]+)`/g, '<code>$1</code>');
-
-        // Convertir Negritas **texto** a <b>texto</b>
-        formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
-
-        return formatted;
-    }
 };

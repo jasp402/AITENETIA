@@ -38,7 +38,7 @@ export interface ServiceStatus {
 // =============== COMPONENTES DE MEMORIA ===============
 
 export interface UserRecord {
-  id: string;          // Discord/Telegram user ID o UUID si no hay
+  id: string;          // Channel user ID o UUID si no hay
   name: string | null;
   channel: string;
   busy_until: string | null;      // ISO Date

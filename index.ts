@@ -1,7 +1,5 @@
 import { initializeDatabase, dbService } from './services/db';
 import { initializeServices, getAllServicesStatus, getActiveServices } from './services';
-import { startTelegramBot } from './telegram';
-import { sendMessage } from './telegram/utils';
 import type { AIService, ChatMessage } from './types';
 import { initMemoryCrons, memoryService } from './services/memory';
 import { mcpService } from './services/mcpClient';
@@ -25,22 +23,11 @@ projectManager.init();
 // Crons de memoria
 initMemoryCrons();
 
-// Recordatorios Telegram
-memoryService.onReminderExecute = (channel, userId, message) => {
-  if (channel === 'telegram') {
-    sendMessage(Number(userId), `⏰ *Recordatorio Automático:*\n\n${message}`);
-  }
-};
-
-// Toques proactivos Telegram
-memoryService.onProactiveNudge = (channel, userId, message) => {
-  if (channel === 'telegram') {
-    sendMessage(Number(userId), `🤖 *Hola:*\n\n${message}`);
-  }
-};
+// Legacy channel callbacks are disabled in this project.
+memoryService.onReminderExecute = () => {};
+memoryService.onProactiveNudge = () => {};
 
 await initializeServices();
-startTelegramBot();
 
 let currentServiceIndex = 0;
 function getNextService() {
