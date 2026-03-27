@@ -45,7 +45,8 @@ Ese paso ahora dispara un `postinstall` que:
 Edita el archivo `.env` y añade tus claves:
 
 ```env
-PORT=3000
+PORT=4001
+NEXT_PUBLIC_API_URL=http://127.0.0.1:4001
 GROQ_API_KEY=gsk_...
 CEREBRAS_API_KEY=csk_...
 ```

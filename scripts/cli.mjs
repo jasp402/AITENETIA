@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { copyFileSync, existsSync } from "node:fs";
+import { copyFileSync, existsSync, readFileSync } from "node:fs";
 import { spawn, spawnSync, execSync } from "node:child_process";
 import path from "node:path";
 import process from "node:process";
@@ -10,7 +10,7 @@ const appDir = path.join(rootDir, "app");
 const envExamplePath = path.join(rootDir, ".env.example");
 const envPath = path.join(rootDir, ".env");
 const FRONTEND_PORT = 4000;
-const BACKEND_PORT = 4001;
+const DEFAULT_BACKEND_PORT = 4001;
 const SKIP_ROOT_INSTALL_ENV = "AITENETIA_SKIP_ROOT_INSTALL";
 
 const args = process.argv.slice(2);
@@ -81,6 +81,32 @@ function ensureEnvFile() {
 
   copyFileSync(envExamplePath, envPath);
   log("Created .env from .env.example.");
+}
+
+function parseEnvText(content) {
+  const env = {};
+  for (const line of String(content || "").split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const separatorIndex = trimmed.indexOf("=");
+    if (separatorIndex === -1) continue;
+    const key = trimmed.slice(0, separatorIndex).trim();
+    const value = trimmed.slice(separatorIndex + 1).trim().replace(/^['"]|['"]$/g, "");
+    env[key] = value;
+  }
+  return env;
+}
+
+async function getRuntimeEnv() {
+  if (!existsSync(envPath)) return {};
+  return parseEnvText(readFileSync(envPath, "utf8"));
+}
+
+async function getBackendPort() {
+  const runtimeEnv = await getRuntimeEnv();
+  const configured = runtimeEnv.PORT || process.env.PORT;
+  const parsed = Number(configured);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_BACKEND_PORT;
 }
 
 function hasCommand(commandName) {
@@ -223,10 +249,11 @@ async function launchStack({ open = false }) {
     fail("Bun is required to launch the backend. Install Bun and try again.");
   }
 
+  const backendPort = await getBackendPort();
   killPort(FRONTEND_PORT);
-  killPort(BACKEND_PORT);
+  killPort(backendPort);
 
-  log(`Starting backend on http://127.0.0.1:${BACKEND_PORT} ...`);
+  log(`Starting backend on http://127.0.0.1:${backendPort} ...`);
   const backend = spawn("bun", ["run", "index.ts"], {
     cwd: rootDir,
     stdio: "inherit",
@@ -239,6 +266,10 @@ async function launchStack({ open = false }) {
   const frontend = spawn(frontendCommand.command, frontendCommand.args, {
     cwd: appDir,
     stdio: "inherit",
+    env: {
+      ...process.env,
+      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || `http://127.0.0.1:${backendPort}`,
+    },
   });
 
   const shutdown = () => {
