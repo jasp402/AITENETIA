@@ -1,0 +1,32 @@
+{
+  "name": "ai-tenet-ia",
+  "description": "AI Tenet IA, Orchestator multi-agents",
+  "version": "1.0.0",
+  "author": "Jasp402 (Jesus Perez)",
+  "license": "UNLICENSED",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run index.ts",
+    "dev": "bun run scripts/dev.ts",
+    "backend": "bun --watch run index.ts",
+    "frontend": "npm run dev --prefix app"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@cerebras/cerebras_cloud_sdk": "^1.59.0",
+    "@google/generative-ai": "^0.24.1",
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "@modelcontextprotocol/server-filesystem": "^2026.1.14",
+    "@types/node-cron": "^3.0.11",
+    "groq-sdk": "^0.37.0",
+    "node-cron": "^4.2.1",
+    "openai": "^6.21.0"
+  }
+}
